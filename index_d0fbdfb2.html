@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procurement Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- SheetJS for Excel Parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar { background-color: #0A1931; }
+        .nav-item.active { background-color: #1E6FDB; color: white; }
+        .nav-item { color: #CBD5E1; transition: all 0.2s; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        .kpi-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .chart-container { min-height: 300px; }
+        .glass-panel { background: white; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); border: 1px solid #E2E8F0; }
+        .filter-select { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 12px; font-size: 14px; width: 100%; color: #334155; }
+        .filter-select:focus { outline: none; border-color: #1E6FDB; ring: 2px solid rgba(30, 111, 219, 0.2); }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    </style>
+</head>
+<body class="bg-gray-50 font-['Inter'] text-gray-800">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 flex-shrink-0 fixed h-full overflow-y-auto hidden md:block">
+            <div class="p-6">
+                <h1 class="text-white text-xl font-bold tracking-wide mb-8">PROCUREMENT</h1>
+                <nav class="space-y-1">
+                    <a href="#" class="nav-item active flex items-center px-4 py-3 rounded-lg text-sm font-medium">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        Overview
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg text-sm font-medium">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        Indent Summary
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg text-sm font-medium">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        Item Summary
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg text-sm font-medium">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Indent Analysis
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg text-sm font-medium">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Item Analysis
+                    </a>
+                    <a href="#" class="nav-item flex items-center px-4 py-3 rounded-lg text-sm font-medium">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Pending Analysis
+                    </a>
+                </nav>
+                
+                <div class="mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
+                    <h3 class="text-white text-xs font-semibold uppercase tracking-wider mb-4">Data Source</h3>
+                    <label class="flex items-center justify-center w-full px-4 py-3 mb-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg cursor-pointer transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Upload Excel File
+                        <input type="file" id="file-upload" class="hidden" accept=".xlsx, .xls, .csv" />
+                    </label>
+                    
+                    <h3 class="text-white text-xs font-semibold uppercase tracking-wider mb-4">Filters</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Financial Year</label>
+                            <select id="filter-year" class="filter-select"><option value="">All</option></select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Month</label>
+                            <select id="filter-month" class="filter-select"><option value="">All</option></select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Category</label>
+                            <select id="filter-category" class="filter-select"><option value="">All</option></select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Status</label>
+                            <select id="filter-status" class="filter-select"><option value="">All</option></select>
+                        </div>
+                        <button id="btn-reset-filters" class="w-full mt-4 flex items-center justify-center px-4 py-2 border border-white/20 rounded-lg text-white text-sm hover:bg-white/10 transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Reset Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 md:ml-64 p-6 lg:p-8">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">PROCUREMENT DASHBOARD</h2>
+                    <p class="text-sm text-gray-500 mt-1">Indent-wise & Item-wise Summary</p>
+                </div>
+                <div class="flex items-center mt-4 sm:mt-0 text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Last Updated: <span id="last-updated" class="font-medium text-gray-700 ml-1"></span>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8" id="kpi-container">
+                <!-- KPI 1: Total Indents -->
+                <div class="kpi-card glass-panel p-4 flex flex-col">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 bg-blue-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Total Indents</span>
+                    </div>
+                    <span class="text-2xl font-bold text-gray-900" id="kpi-total-indents">0</span>
+                    <span class="text-xs text-gray-500 mt-1">Distinct Indent No.</span>
+                </div>
+                <!-- KPI 2: Pending Indents -->
+                <div class="kpi-card glass-panel p-4 flex flex-col">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 bg-orange-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Pending Indents</span>
+                    </div>
+                    <span class="text-2xl font-bold text-gray-900" id="kpi-pending-indents">0</span>
+                    <span class="text-xs text-gray-500 mt-1" id="kpi-pending-indents-pct">0% of Total</span>
+                </div>
+                <!-- KPI 3: Completed Indents -->
+                <div class="kpi-card glass-panel p-4 flex flex-col">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 bg-green-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Completed</span>
+                    </div>
+                    <span class="text-2xl font-bold text-gray-900" id="kpi-completed-indents">0</span>
+                    <span class="text-xs text-gray-500 mt-1" id="kpi-completed-indents-pct">0% of Total</span>
+                </div>
+                <!-- KPI 4: Total Items -->
+                <div class="kpi-card glass-panel p-4 flex flex-col">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 bg-purple-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Total Items</span>
+                    </div>
+                    <span class="text-2xl font-bold text-gray-900" id="kpi-total-items">0</span>
+                    <span class="text-xs text-gray-500 mt-1">Total Item Rows</span>
+                </div>
+                <!-- KPI 5: Pending Items -->
+                <div class="kpi-card glass-panel p-4 flex flex-col">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 bg-red-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Pending Items</span>
+                    </div>
+                    <span class="text-2xl font-bold text-gray-900" id="kpi-pending-items">0</span>
+                    <span class="text-xs text-gray-500 mt-1" id="kpi-pending-items-pct">0% of Total</span>
+                </div>
+                <!-- KPI 6: Avg Pending Days -->
+                <div class="kpi-card glass-panel p-4 flex flex-col">
+                    <div class="flex items-center mb-2">
+                        <div class="p-2 bg-teal-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Avg Pending Days</span>
+                    </div>
+                    <span class="text-2xl font-bold text-gray-900" id="kpi-avg-pending-days">0</span>
+                    <span class="text-xs text-gray-500 mt-1">Days</span>
+                </div>
+            </div>
+            
+            <!-- Indent Analysis Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-1 h-6 bg-blue-600 rounded-full mr-3"></span>
+                    INDENT ANALYSIS (Indent-wise)
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Monthly Indent Trend -->
+                    <div class="glass-panel p-5 lg:col-span-2">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">Monthly Indent Trend</h4>
+                        <div id="chart-monthly-indents" class="chart-container"></div>
+                    </div>
+                    <!-- Indent Status -->
+                    <div class="glass-panel p-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">Indent Status</h4>
+                        <div id="chart-indent-status" class="chart-container"></div>
+                    </div>
+                    <!-- Indent Summary -->
+                    <div class="glass-panel p-5 flex flex-col justify-center">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 border-b pb-2">Indent Summary</h4>
+                        <div class="space-y-4" id="indent-summary-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
+                    <!-- Top Categories by Indents -->
+                    <div class="glass-panel p-5 lg:col-span-3">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">Top Categories by Indents</h4>
+                        <div id="chart-top-cat-indents" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item Analysis Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-1 h-6 bg-purple-600 rounded-full mr-3"></span>
+                    ITEM ANALYSIS (Item-wise)
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Top 10 Requested Items -->
+                    <div class="glass-panel p-5 lg:col-span-2">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">Top 10 Requested Items</h4>
+                        <div id="chart-top-items" class="chart-container"></div>
+                    </div>
+                    <!-- Top Categories by Items -->
+                    <div class="glass-panel p-5 lg:col-span-1">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">Top Categories by Items</h4>
+                        <div id="chart-top-cat-items" class="chart-container"></div>
+                    </div>
+                    <!-- UOM Distribution -->
+                    <div class="glass-panel p-5 lg:col-span-1">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">UOM Distribution</h4>
+                        <div id="chart-uom-dist" class="chart-container"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
+                    <!-- Unique Stats -->
+                    <div class="glass-panel p-5 lg:col-span-1 flex flex-col justify-center space-y-4">
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                                <span class="text-xs font-semibold text-gray-600 uppercase">Unique Item Codes</span>
+                            </div>
+                            <span class="text-2xl font-bold text-gray-900" id="stat-unique-items">0</span>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-100">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                <span class="text-xs font-semibold text-gray-600 uppercase">Unique Categories</span>
+                            </div>
+                            <span class="text-2xl font-bold text-gray-900" id="stat-unique-categories">0</span>
+                        </div>
+                    </div>
+                    <!-- Item Summary -->
+                    <div class="glass-panel p-5 lg:col-span-3 flex flex-col justify-center">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 border-b pb-2">Item Summary</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="item-summary-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Analysis Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-1 h-6 bg-orange-500 rounded-full mr-3"></span>
+                    PENDING ANALYSIS
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Pending Aging Bucket (Indents) -->
+                    <div class="glass-panel p-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">Pending Aging (Indents)</h4>
+                        <div id="chart-aging-indents" class="chart-container"></div>
+                    </div>
+                    <!-- Pending Items by Aging Bucket -->
+                    <div class="glass-panel p-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4">Pending Aging (Items)</h4>
+                        <div id="chart-aging-items" class="chart-container"></div>
+                    </div>
+                    <!-- Procurement Intelligence -->
+                    <div class="glass-panel p-5 flex flex-col">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 border-b pb-2">Procurement Intelligence</h4>
+                        <div class="flex-1 flex flex-col justify-center space-y-4">
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Avg Pending Days</p>
+                                <p class="text-3xl font-bold text-orange-600" id="intel-avg-pending">0</p>
+                                <p class="text-xs text-gray-400 mt-1">Days across all pending</p>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Longest Pending</p>
+                                <p class="text-3xl font-bold text-red-600" id="intel-max-pending">0</p>
+                                <p class="text-xs text-gray-400 mt-1">Days</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Top 20 Pending Indents Table -->
+                <div class="glass-panel p-5 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-sm font-semibold text-gray-700">Top 20 Pending Indents (by Days)</h4>
+                        <a href="#" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View All Pending Indents &rarr;</a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Indent No</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Indent Date</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item Count</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending Days</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="pending-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Note -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <p class="text-xs text-gray-500 italic flex items-start">
+                    <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Note: Indent Count is the distinct count of INDENT NO. Item Count is the total number of rows (each item in an indent is counted separately). Pending Days are calculated from the Indent Date to the current date or Completion Date.
+                </p>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        let rawData = [];
+        let filteredData = [];
+        let charts = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('last-updated').textContent = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            initCharts();
+            loadSampleData(); // Load sample data on start
+            
+            document.getElementById('filter-year').addEventListener('change', applyFilters);
+            document.getElementById('filter-month').addEventListener('change', applyFilters);
+            document.getElementById('filter-category').addEventListener('change', applyFilters);
+            document.getElementById('filter-status').addEventListener('change', applyFilters);
+            document.getElementById('btn-reset-filters').addEventListener('click', resetFilters);
+            document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                
+                populateFilterOptions(rawData);
+                applyFilters();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function populateFilterOptions(data) {
+            const years = [...new Set(data.map(d => String(d['FINANCIAL YEAR'] || '').trim()))].filter(Boolean).sort();
+            const months = [...new Set(data.map(d => String(d['MONTH'] || '').trim()))].filter(Boolean).sort();
+            const categories = [...new Set(data.map(d => String(d['CATEGORY'] || '').trim()))].filter(Boolean).sort();
+            const statuses = [...new Set(data.map(d => String(d['INDENT STATUS'] || '').trim()))].filter(Boolean).sort();
+            
+            updateSelectOptions('filter-year', years);
+            updateSelectOptions('filter-month', months);
+            updateSelectOptions('filter-category', categories);
+            updateSelectOptions('filter-status', statuses);
+        }
+
+        function updateSelectOptions(id, options) {
+            const select = document.getElementById(id);
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">All</option>';
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt;
+                select.appendChild(option);
+            });
+            if (options.includes(currentVal)) select.value = currentVal;
+        }
+
+        function applyFilters() {
+            const year = document.getElementById('filter-year').value;
+            const month = document.getElementById('filter-month').value;
+            const category = document.getElementById('filter-category').value;
+            const status = document.getElementById('filter-status').value;
+            
+            filteredData = rawData.filter(row => {
+                if (year && String(row['FINANCIAL YEAR']).trim() !== year) return false;
+                if (month && String(row['MONTH']).trim() !== month) return false;
+                if (category && String(row['CATEGORY']).trim() !== category) return false;
+                if (status && String(row['INDENT STATUS']).trim() !== status) return false;
+                return true;
+            });
+            updateDashboard(filteredData);
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-year').value = "";
+            document.getElementById('filter-month').value = "";
+            document.getElementById('filter-category').value = "";
+            document.getElementById('filter-status').value = "";
+            applyFilters();
+        }
+
+        function updateDashboard(data) {
+            if (data.length === 0) return;
+
+            const totalIndents = new Set(data.map(d => d['INDENT NO'])).size;
+            const pendingIndents = new Set(data.filter(d => String(d['INDENT STATUS']).trim() === 'Pending').map(d => d['INDENT NO'])).size;
+            const completedIndents = totalIndents - pendingIndents;
+            const totalItems = data.length;
+            const pendingItems = data.filter(d => String(d['INDENT STATUS']).trim() === 'Pending').length;
+            
+            const pendingRows = data.filter(d => String(d['INDENT STATUS']).trim() === 'Pending');
+            const avgPendingDays = pendingRows.length > 0 ? (pendingRows.reduce((sum, d) => sum + (parseFloat(d['PENDING DAYS']) || 0), 0) / pendingRows.length).toFixed(1) : 0;
+            const maxPending = pendingRows.length > 0 ? Math.max(...pendingRows.map(d => parseFloat(d['PENDING DAYS']) || 0)).toFixed(0) : 0;
+
+            // Update DOM
+            document.getElementById('kpi-total-indents').textContent = totalIndents.toLocaleString();
+            document.getElementById('kpi-pending-indents').textContent = pendingIndents.toLocaleString();
+            document.getElementById('kpi-pending-indents-pct').textContent = totalIndents > 0 ? ((pendingIndents / totalIndents) * 100).toFixed(1) + '% of Total' : '0%';
+            document.getElementById('kpi-completed-indents').textContent = completedIndents.toLocaleString();
+            document.getElementById('kpi-completed-indents-pct').textContent = totalIndents > 0 ? ((completedIndents / totalIndents) * 100).toFixed(1) + '% of Total' : '0%';
+            document.getElementById('kpi-total-items').textContent = totalItems.toLocaleString();
+            document.getElementById('kpi-pending-items').textContent = pendingItems.toLocaleString();
+            document.getElementById('kpi-pending-items-pct').textContent = totalItems > 0 ? ((pendingItems / totalItems) * 100).toFixed(1) + '% of Total' : '0%';
+            document.getElementById('kpi-avg-pending-days').textContent = avgPendingDays;
+
+            document.getElementById('stat-unique-items').textContent = new Set(data.map(d => d['ITEM CODE'])).size.toLocaleString();
+            document.getElementById('stat-unique-categories').textContent = new Set(data.map(d => d['CATEGORY'])).size.toLocaleString();
+            document.getElementById('intel-avg-pending').textContent = avgPendingDays;
+            document.getElementById('intel-max-pending').textContent = maxPending;
+
+            document.getElementById('indent-summary-list').innerHTML = `
+                <div class="flex items-center justify-between"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-blue-500 mr-2"></div><span class="text-sm text-gray-600">Total Indents</span></div><span class="text-sm font-bold text-gray-900">${totalIndents.toLocaleString()}</span></div>
+                <div class="flex items-center justify-between"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-green-500 mr-2"></div><span class="text-sm text-gray-600">Completed Indents</span></div><span class="text-sm font-bold text-gray-900">${completedIndents.toLocaleString()}</span></div>
+                <div class="flex items-center justify-between"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-orange-500 mr-2"></div><span class="text-sm text-gray-600">Pending Indents</span></div><span class="text-sm font-bold text-gray-900">${pendingIndents.toLocaleString()}</span></div>
+                <div class="flex items-center justify-between"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-teal-500 mr-2"></div><span class="text-sm text-gray-600">Completion Rate</span></div><span class="text-sm font-bold text-gray-900">${totalIndents > 0 ? ((completedIndents / totalIndents) * 100).toFixed(1) : 0}%</span></div>
+                <div class="flex items-center justify-between"><div class="flex items-center"><div class="w-2 h-2 rounded-full bg-red-500 mr-2"></div><span class="text-sm text-gray-600">Average Pending Days</span></div><span class="text-sm font-bold text-gray-900">${avgPendingDays}</span></div>
+            `;
+
+            document.getElementById('item-summary-list').innerHTML = `
+                <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-500 uppercase">Total Items</p><p class="text-xl font-bold text-gray-900">${totalItems.toLocaleString()}</p></div>
+                <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-500 uppercase">Pending Items</p><p class="text-xl font-bold text-orange-600">${pendingItems.toLocaleString()}</p></div>
+                <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-500 uppercase">Completed Items</p><p class="text-xl font-bold text-green-600">${(totalItems - pendingItems).toLocaleString()}</p></div>
+                <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-500 uppercase">Unique Codes</p><p class="text-xl font-bold text-blue-600">${new Set(data.map(d => d['ITEM CODE'])).size.toLocaleString()}</p></div>
+                <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-500 uppercase">Categories</p><p class="text-xl font-bold text-purple-600">${new Set(data.map(d => d['CATEGORY'])).size.toLocaleString()}</p></div>
+            `;
+
+            const tableBody = document.getElementById('pending-table-body');
+            tableBody.innerHTML = '';
+            const pendingIndentsDetail = pendingRows.reduce((acc, row) => {
+                const indentNo = row['INDENT NO'];
+                if (!acc[indentNo]) acc[indentNo] = { 'INDENT NO': indentNo, 'INDENT DATE': row['INDENT DATE'], 'CATEGORY': row['CATEGORY'], 'ITEM_COUNT': 0, 'PENDING DAYS': 0 };
+                acc[indentNo]['ITEM_COUNT'] += 1;
+                acc[indentNo]['PENDING DAYS'] = Math.max(acc[indentNo]['PENDING DAYS'], parseFloat(row['PENDING DAYS']) || 0);
+                return acc;
+            }, {});
+            
+            Object.values(pendingIndentsDetail).sort((a, b) => b['PENDING DAYS'] - a['PENDING DAYS']).slice(0, 20).forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">#${row['INDENT NO']}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${row['INDENT DATE']}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600"><span class="px-2 py-1 bg-gray-100 rounded-full text-xs font-medium">${row['CATEGORY']}</span></td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${row['ITEM_COUNT']}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold ${row['PENDING DAYS'] > 100 ? 'text-red-600' : 'text-orange-600'}">${row['PENDING DAYS']} days</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            updateCharts(data);
+        }
+
+        function updateCharts(data) {
+            const colors = { blue: '#1E88E5', orange: '#FF9800', green: '#4CAF50', purple: '#9C27B0', red: '#F44336', teal: '#00BCD4' };
+            const commonTooltip = { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: '#E2E8F0', borderWidth: 1, textStyle: { color: '#334155', fontSize: 12 }, extraCssText: 'box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px;' };
+
+            const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthlyIndents = {};
+            data.forEach(d => { const m = d['MONTH']; const indent = d['INDENT NO']; if (!monthlyIndents[m]) monthlyIndents[m] = new Set(); monthlyIndents[m].add(indent); });
+            const monthlyData = monthOrder.map(m => ({ MONTH: m, count: monthlyIndents[m] ? monthlyIndents[m].size : 0 })).filter(d => d.count > 0);
+            charts.monthly.setOption({ xAxis: { data: monthlyData.map(d => d.MONTH.substring(0, 3)) }, series: [{ data: monthlyData.map(d => d.count) }] });
+
+            const totalIndents = new Set(data.map(d => d['INDENT NO'])).size;
+            const pendingIndents = new Set(data.filter(d => String(d['INDENT STATUS']).trim() === 'Pending').map(d => d['INDENT NO'])).size;
+            charts.status.setOption({ series: [{ label: { formatter: '{total|' + totalIndents + '}\n{label|Total}' }, data: [{ value: totalIndents - pendingIndents, name: 'Completed', itemStyle: { color: colors.green } }, { value: pendingIndents, name: 'Pending', itemStyle: { color: colors.orange } }] }] });
+
+            const catIndents = {};
+            data.forEach(d => { const cat = d['CATEGORY'] || 'Unknown'; if (!catIndents[cat]) catIndents[cat] = new Set(); catIndents[cat].add(d['INDENT NO']); });
+            const topCatIndents = Object.entries(catIndents).map(([cat, set]) => ({ CATEGORY: cat, count: set.size })).sort((a, b) => b.count - a.count).slice(0, 6);
+            charts.catIndents.setOption({ yAxis: { data: topCatIndents.map(d => d.CATEGORY).reverse() }, series: [{ data: topCatIndents.map(d => d.count).reverse() }] });
+
+            const itemQty = {};
+            data.forEach(d => { const name = d['ITEM NAME'] || 'Unknown'; itemQty[name] = (itemQty[name] || 0) + (parseFloat(d['REQUESTED QUANTITY']) || 0); });
+            const topItems = Object.entries(itemQty).map(([name, qty]) => ({ 'ITEM NAME': name, qty: qty })).sort((a, b) => b.qty - a.qty).slice(0, 10);
+            charts.topItems.setOption({ yAxis: { data: topItems.map(d => d['ITEM NAME'].length > 25 ? d['ITEM NAME'].substring(0, 25) + '...' : d['ITEM NAME']).reverse() }, series: [{ data: topItems.map(d => d.qty).reverse() }] });
+
+            const catItems = {};
+            data.forEach(d => { const cat = d['CATEGORY'] || 'Unknown'; catItems[cat] = (catItems[cat] || 0) + 1; });
+            const topCatItems = Object.entries(catItems).map(([cat, count]) => ({ CATEGORY: cat, count: count })).sort((a, b) => b.count - a.count).slice(0, 6);
+            charts.catItems.setOption({ yAxis: { data: topCatItems.map(d => d.CATEGORY).reverse() }, series: [{ data: topCatItems.map(d => d.count).reverse() }] });
+
+            const uomCounts = {};
+            data.forEach(d => { const uom = d['UOM'] || 'Unknown'; uomCounts[uom] = (uomCounts[uom] || 0) + 1; });
+            const uomDist = Object.entries(uomCounts).map(([uom, count]) => ({ UOM: uom, count: count })).sort((a, b) => b.count - a.count).slice(0, 5);
+            charts.uom.setOption({ series: [{ data: uomDist.map((d, i) => ({ value: d.count, name: d.UOM, itemStyle: { color: [colors.blue, colors.green, colors.orange, colors.purple, colors.teal][i] } })) }] });
+
+            const buckets = ['0-7 Days', '8-15 Days', '16-30 Days', '31-60 Days', '>60 Days'];
+            const agingIndents = { '0-7 Days': new Set(), '8-15 Days': new Set(), '16-30 Days': new Set(), '31-60 Days': new Set(), '>60 Days': new Set() };
+            const agingItems = { '0-7 Days': 0, '8-15 Days': 0, '16-30 Days': 0, '31-60 Days': 0, '>60 Days': 0 };
+            
+            data.filter(d => String(d['INDENT STATUS']).trim() === 'Pending').forEach(d => {
+                const days = parseFloat(d['PENDING DAYS']) || 0;
+                let bucket = '>60 Days';
+                if (days <= 7) bucket = '0-7 Days';
+                else if (days <= 15) bucket = '8-15 Days';
+                else if (days <= 30) bucket = '16-30 Days';
+                else if (days <= 60) bucket = '31-60 Days';
+                agingIndents[bucket].add(d['INDENT NO']);
+                agingItems[bucket]++;
+            });
+            
+            charts.agingIndents.setOption({ xAxis: { data: buckets }, series: [{ data: buckets.map(b => agingIndents[b].size) }] });
+            charts.agingItems.setOption({ xAxis: { data: buckets }, series: [{ data: buckets.map(b => agingItems[b]) }] });
+        }
+
+        function initCharts() {
+            const commonGrid = { left: '3%', right: '10%', bottom: '15%', top: '10%', containLabel: true };
+            const commonAxis = { axisLine: { show: false }, splitLine: { lineStyle: { color: '#F1F5F9' } }, axisLabel: { color: '#64748B' } };
+            
+            charts.monthly = echarts.init(document.getElementById('chart-monthly-indents'));
+            charts.monthly.setOption({ tooltip: { trigger: 'axis' }, grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true }, xAxis: { type: 'category' }, yAxis: { type: 'value', ...commonAxis }, series: [{ type: 'line', smooth: true, itemStyle: { color: '#1E88E5' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(30, 136, 229, 0.2)' }, { offset: 1, color: 'rgba(30, 136, 229, 0)' }]) } }] });
+
+            charts.status = echarts.init(document.getElementById('chart-indent-status'));
+            charts.status.setOption({ tooltip: { trigger: 'item' }, series: [{ type: 'pie', radius: ['50%', '70%'], center: ['50%', '50%'], itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 }, label: { show: true, position: 'center', rich: { total: { fontSize: 20, fontWeight: 'bold', color: '#334155' }, label: { fontSize: 12, color: '#94A3B8' } } } }] });
+
+            charts.catIndents = echarts.init(document.getElementById('chart-top-cat-indents'));
+            charts.catIndents.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, grid: commonGrid, xAxis: { type: 'value', ...commonAxis }, yAxis: { type: 'category' }, series: [{ type: 'bar', itemStyle: { color: '#1E88E5', borderRadius: [0, 4, 4, 0] }, barWidth: '60%', label: { show: true, position: 'right', color: '#64748B', fontSize: 11 } }] });
+
+            charts.topItems = echarts.init(document.getElementById('chart-top-items'));
+            charts.topItems.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, grid: { left: '3%', right: '15%', bottom: '3%', top: '5%', containLabel: true }, xAxis: { type: 'value', ...commonAxis }, yAxis: { type: 'category' }, series: [{ type: 'bar', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#9C27B0' }, { offset: 1, color: '#E040FB' }]), borderRadius: [0, 4, 4, 0] }, barWidth: '60%', label: { show: true, position: 'right', color: '#64748B', fontSize: 11, formatter: (p) => (p.value / 1000).toFixed(0) + 'K' } }] });
+
+            charts.catItems = echarts.init(document.getElementById('chart-top-cat-items'));
+            charts.catItems.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, grid: { left: '3%', right: '15%', bottom: '3%', top: '5%', containLabel: true }, xAxis: { type: 'value', ...commonAxis }, yAxis: { type: 'category' }, series: [{ type: 'bar', itemStyle: { color: '#9C27B0', borderRadius: [0, 4, 4, 0] }, barWidth: '60%', label: { show: true, position: 'right', color: '#64748B', fontSize: 11 } }] });
+
+            charts.uom = echarts.init(document.getElementById('chart-uom-dist'));
+            charts.uom.setOption({ tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' }, series: [{ type: 'pie', radius: ['40%', '70%'], center: ['50%', '45%'], itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 }, label: { show: false } }] });
+
+            charts.agingIndents = echarts.init(document.getElementById('chart-aging-indents'));
+            charts.agingIndents.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, grid: { left: '15%', right: '5%', bottom: '15%', top: '10%', containLabel: true }, xAxis: { type: 'category', axisLabel: { color: '#64748B', fontSize: 10, rotate: 15 } }, yAxis: { type: 'value', ...commonAxis }, series: [{ type: 'bar', itemStyle: { color: '#FF9800', borderRadius: [4, 4, 0, 0] }, barWidth: '50%' }] });
+
+            charts.agingItems = echarts.init(document.getElementById('chart-aging-items'));
+            charts.agingItems.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, grid: { left: '15%', right: '5%', bottom: '15%', top: '10%', containLabel: true }, xAxis: { type: 'category', axisLabel: { color: '#64748B', fontSize: 10, rotate: 15 } }, yAxis: { type: 'value', ...commonAxis }, series: [{ type: 'bar', itemStyle: { color: '#F44336', borderRadius: [4, 4, 0, 0] }, barWidth: '50%' }] });
+
+            window.addEventListener('resize', () => Object.values(charts).forEach(c => c.resize()));
+        }
+
+        function loadSampleData() {
+            // Generate a realistic sample dataset so the dashboard isn't empty on first load
+            const categories = ['PNP', 'PNM', 'PNG', 'PNE'];
+            const statuses = ['Pending', 'Completed'];
+            const uoms = ['NOS', 'KGS', 'SHT', 'TON', 'MTR'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            rawData = [];
+            for (let i = 0; i < 200; i++) {
+                const isPending = Math.random() > 0.7;
+                const days = isPending ? Math.floor(Math.random() * 120) : 0;
+                rawData.push({
+                    'INDENT NO': 10000 + i,
+                    'INDENT DATE': `2025-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+                    'CATEGORY': categories[Math.floor(Math.random() * categories.length)],
+                    'ITEM CODE': `ITEM-${Math.floor(Math.random() * 1000)}`,
+                    'ITEM NAME': `Sample Item ${Math.floor(Math.random() * 50)}`,
+                    'UOM': uoms[Math.floor(Math.random() * uoms.length)],
+                    'REQUESTED QUANTITY': Math.floor(Math.random() * 100) + 1,
+                    'INDENT STATUS': isPending ? 'Pending' : 'Completed',
+                    'PENDING DAYS': days,
+                    'FINANCIAL YEAR': '2025-2026',
+                    'MONTH': months[Math.floor(Math.random() * months.length)]
+                });
+            }
+            populateFilterOptions(rawData);
+            applyFilters();
+        }
+
+        gsap.registerPlugin(ScrollTrigger);
+        gsap.from(".kpi-card", { scrollTrigger: { trigger: "#kpi-container", start: "top 90%" }, y: 30, opacity: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" });
+        gsap.utils.toArray(".glass-panel").forEach((panel, i) => {
+            gsap.from(panel, { scrollTrigger: { trigger: panel, start: "top 90%" }, y: 40, opacity: 0, duration: 0.7, delay: i * 0.05, ease: "power2.out" });
+        });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
