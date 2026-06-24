@@ -581,35 +581,22 @@
 
             window.addEventListener('resize', () => Object.values(charts).forEach(c => c.resize()));
         }
+        async function loadGoogleSheetData() {
+    try {
 
-        function loadSampleData() {
-            // Generate a realistic sample dataset so the dashboard isn't empty on first load
-            const categories = ['PNP', 'PNM', 'PNG', 'PNE'];
-            const statuses = ['Pending', 'Completed'];
-            const uoms = ['NOS', 'KGS', 'SHT', 'TON', 'MTR'];
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            
-            rawData = [];
-            for (let i = 0; i < 200; i++) {
-                const isPending = Math.random() > 0.7;
-                const days = isPending ? Math.floor(Math.random() * 120) : 0;
-                rawData.push({
-                    'INDENT NO': 10000 + i,
-                    'INDENT DATE': `2025-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-                    'CATEGORY': categories[Math.floor(Math.random() * categories.length)],
-                    'ITEM CODE': `ITEM-${Math.floor(Math.random() * 1000)}`,
-                    'ITEM NAME': `Sample Item ${Math.floor(Math.random() * 50)}`,
-                    'UOM': uoms[Math.floor(Math.random() * uoms.length)],
-                    'REQUESTED QUANTITY': Math.floor(Math.random() * 100) + 1,
-                    'INDENT STATUS': isPending ? 'Pending' : 'Completed',
-                    'PENDING DAYS': days,
-                    'FINANCIAL YEAR': '2025-2026',
-                    'MONTH': months[Math.floor(Math.random() * months.length)]
-                });
-            }
-            populateFilterOptions(rawData);
-            applyFilters();
-        }
+        const response = await fetch("YOUR_APPS_SCRIPT_URLhttps://script.google.com/macros/s/AKfycbxDzWIrjkXI4InFt1CelaKOy1sXrzK6cFZ9BARX9xNXlU3PdRzpAY9RkPGC6sC8jXDt/exec");
+
+        rawData = await response.json();
+
+        populateFilterOptions(rawData);
+        applyFilters();
+
+    } catch (error) {
+        console.error(error);
+        alert("Failed to load Google Sheet data");
+    }
+}
+
 
         gsap.registerPlugin(ScrollTrigger);
         gsap.from(".kpi-card", { scrollTrigger: { trigger: "#kpi-container", start: "top 90%" }, y: 30, opacity: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" });
