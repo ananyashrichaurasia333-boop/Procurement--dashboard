@@ -350,7 +350,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('last-updated').textContent = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             initCharts();
-            loadSampleData(); // Load sample data on start
+            loadGoogleSheetData(); // Load sample data on start
             
             document.getElementById('filter-year').addEventListener('change', applyFilters);
             document.getElementById('filter-month').addEventListener('change', applyFilters);
